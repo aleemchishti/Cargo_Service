@@ -1,7 +1,7 @@
 class OrdersController < ApplicationController
 	before_action :authenticate_user!
 	before_action :redirect_if_traveler, only: %i[new]
-	before_action :set_order, only: %i[ show edit update destroy ]
+	before_action :set_order, only: %i[ show edit update destroy update_status ]
 
 	def index
 		@orders = current_user.sender? ? current_user.s_orders : current_user.t_orders
@@ -13,9 +13,9 @@ class OrdersController < ApplicationController
     end 
 	end
 
-	def create 
+	def create
 	  if current_user.s_orders.create(order_params) 
-			redirect_to orders_path
+			redirect_to orders_path, alert: 'Order creation successful'
 		else
 			render :new 
 		end  
@@ -23,12 +23,9 @@ class OrdersController < ApplicationController
 
 	def show; end 
 		
-	def edit
-		if current_user.sender?
-		end 
-	end
+	def edit; end 
 
-	def update 
+	def update
 	 	if current_user.sender?
 			if @order.update(order_params)
 				redirect_to orders_path
@@ -41,7 +38,7 @@ class OrdersController < ApplicationController
 	def destroy
 		if current_user.sender?
 			@order.destroy
-			redirect_to orders_url , :notice => "order has been deleted"
+			redirect_to orders_url , alert:  "order has been deleted"
 		end
 	end
 
@@ -49,7 +46,16 @@ class OrdersController < ApplicationController
 		if current_user.traveler?
 			@orders = current_user.t_orders
 		end 
-	end 
+	end
+
+	def update_status
+		if current_user.traveler?
+			@order.update(status: 'Confirmed')
+			redirect_to received_orders_path
+		else
+			redirect_to root_path
+		end
+	end
 
 	private 
 
@@ -63,7 +69,7 @@ class OrdersController < ApplicationController
 
 	def redirect_if_traveler
 		if current_user.traveler?
-			redirect_to root_path,notice:"not authorized"
+			redirect_to root_path, alert:"not authorized"
 		end 
 	end 
 end
